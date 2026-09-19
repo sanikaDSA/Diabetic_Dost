@@ -19,28 +19,28 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/*
 
 # Install PyTorch CPU wheels and project Python requirements
-COPY Project_1-main/backend/requirements.txt /app/requirements.txt
+COPY backend/requirements.txt /app/requirements.txt
 RUN pip install --no-cache-dir --upgrade pip && \
     pip install --no-cache-dir torch torchaudio --index-url https://download.pytorch.org/whl/cpu && \
     pip install --no-cache-dir -r /app/requirements.txt
 
-# Copy project files
-COPY Project_1-main/ /app/Project_1-main/
+# Copy all project files
+COPY . /app/
 
 # Create runtime directories for persistent outputs and datasets
 RUN mkdir -p \
-    /app/Project_1-main/outputs/database \
-    /app/Project_1-main/outputs/reports/sessions \
-    /app/Project_1-main/outputs/logs \
-    /app/Project_1-main/outputs/checkpoints \
-    /app/Project_1-main/datasets/raw_audio \
-    /app/Project_1-main/datasets/processed_audio \
-    /app/Project_1-main/datasets/transcripts \
-    /app/Project_1-main/datasets/manifests \
-    /app/Project_1-main/datasets/reviewed
+    /app/outputs/database \
+    /app/outputs/reports/sessions \
+    /app/outputs/logs \
+    /app/outputs/checkpoints \
+    /app/datasets/raw_audio \
+    /app/datasets/processed_audio \
+    /app/datasets/transcripts \
+    /app/datasets/manifests \
+    /app/datasets/reviewed
 
 # Set working directory to backend application
-WORKDIR /app/Project_1-main/backend
+WORKDIR /app/backend
 
 # Expose application port
 EXPOSE 8000

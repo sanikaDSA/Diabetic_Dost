@@ -1,0 +1,27 @@
+services:
+  diabetes-dost:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: diabetes_dost_app
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+      - HOST=0.0.0.0
+      - SARVAM_API_KEY=${SARVAM_API_KEY:-}
+    env_file:
+      - path: Project_1-main/.env
+        required: false
+      - path: .env
+        required: false
+    volumes:
+      # Persist SQLite database across container restarts
+      - ./Project_1-main/outputs/database:/app/Project_1-main/outputs/database
+      # Persist clinical reports, consultation records, and session exports
+      - ./Project_1-main/outputs/reports:/app/Project_1-main/outputs/reports
+      # Persist pipeline and training logs
+      - ./Project_1-main/outputs/logs:/app/Project_1-main/outputs/logs
+      # Persist dataset audio files and manifests
+      - ./Project_1-main/datasets:/app/Project_1-main/datasets
+    restart: unless-stopped
