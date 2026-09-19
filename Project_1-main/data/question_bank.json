@@ -323,6 +323,63 @@
       "follow_up_topics": []
     }
   ],
+  "follow_up": [
+    {
+      "question_id": "FU_RECENT_SUGAR",
+      "topic": "blood_sugar_readings",
+      "branch": "follow_up",
+      "question_hi": "पिछले परामर्श के बाद क्या आपने हाल ही में अपनी Fasting या PP Blood Sugar टेस्ट कराई है? यदि याद हो तो आपकी Sugar कितनी आई थी?",
+      "priority": "mandatory",
+      "required": true,
+      "follow_up_topics": [
+        "medication_compliance"
+      ]
+    },
+    {
+      "question_id": "FU_MED_COMPLIANCE",
+      "topic": "medications",
+      "branch": "follow_up",
+      "question_hi": "क्या आप अपनी निर्धारित Medicines या Insulin नियमित रूप से ले रहे हैं, या Doctor ने खुराक में कोई बदलाव किया है?",
+      "priority": "high",
+      "required": false,
+      "follow_up_topics": [
+        "symptom_progression"
+      ]
+    },
+    {
+      "question_id": "FU_SYMPTOM_PROGRESSION",
+      "topic": "symptom_progression",
+      "branch": "follow_up",
+      "question_hi": "पिछले समय की तुलना में क्या आपको ज्यादा प्यास, थकान, नजर में धुंधलापन या पैरों में सुन्नपन में कोई सुधार लगा, या कोई नया लक्षण महसूस हुआ?",
+      "priority": "high",
+      "required": false,
+      "follow_up_topics": [
+        "hypoglycemia_episodes"
+      ]
+    },
+    {
+      "question_id": "FU_HYPO_EPISODES",
+      "topic": "hypoglycemia_symptoms",
+      "branch": "follow_up",
+      "question_hi": "क्या पिछले कुछ हफ्तों में कभी अचानक बहुत ज्यादा पसीना आना, हाथ कांपना, घबराहट या Low Sugar का कोई एपिसोड हुआ?",
+      "priority": "medium",
+      "required": false,
+      "follow_up_topics": [
+        "lifestyle_update"
+      ]
+    },
+    {
+      "question_id": "FU_LIFESTYLE_UPDATE",
+      "topic": "lifestyle_factors",
+      "branch": "follow_up",
+      "question_hi": "आपकी Diet Routine, मीठा परहेज और Daily Walk या Exercise कैसी चल रही है?",
+      "priority": "low",
+      "required": false,
+      "follow_up_topics": [
+        "closing_remarks"
+      ]
+    }
+  ],
   "closing": [
     {
       "question_id": "CLS_FINAL_FEEDBACK",

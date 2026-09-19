@@ -297,19 +297,39 @@ class TestSehatAISuite(unittest.TestCase):
         self.dialogue.start_session(sid)
         self.dialogue.process_turn(sid, "हाँ, सहमत हूँ") # Consent given -> now at COM_DEMOGRAPHICS
 
-        # Patient only gives name: "मेरा नाम गोविंद है" (missing age and gender)
+        # Patient only gives name: "मेरा नाम गोविंद है" (Gender auto-detected as Male, missing Age)
         res1 = self.dialogue.process_turn(sid, "मेरा नाम गोविंद है")
         self.assertEqual(res1["next_question_id"], "COM_DEMOGRAPHICS")
         self.assertTrue("Age" in res1["bot_speech_hi"] or "उम्र" in res1["bot_speech_hi"])
-        self.assertTrue("Gender" in res1["bot_speech_hi"] or "लिंग" in res1["bot_speech_hi"])
 
-        # Patient supplies remaining age and gender: "मेरी उम्र 24 वर्ष है और मैं पुरुष हूँ"
-        res2 = self.dialogue.process_turn(sid, "मेरी उम्र 24 वर्ष है और मैं पुरुष हूँ")
+        # Patient supplies remaining age: "मेरी उम्र 24 वर्ष है"
+        res2 = self.dialogue.process_turn(sid, "मेरी उम्र 24 वर्ष है")
         self.assertEqual(res2["next_question_id"], "COM_STATUS") # Successfully proceeded
         self.assertEqual(res2["state"]["patient"]["name"], "गोविंद")
         self.assertEqual(res2["state"]["patient"]["age"], 24)
         self.assertEqual(res2["state"]["patient"]["gender"], "पुरुष (Male)")
 
+    def test_name_based_gender_autodetect_and_autocorrect(self):
+        """Verify that female names like ईश्वरी / Ishwari auto-detect & auto-correct gender as Female."""
+        # 1. Auto-detection when gender omitted
+        s1 = SehatSessionState(session_id="test_ishwari_1")
+        self.dialogue._extract_demographics(s1, "ईश्वरी, 22 वर्ष")
+        self.assertEqual(s1.demographics.get("name"), "ईश्वरी")
+        self.assertEqual(s1.demographics.get("age"), 22)
+        self.assertEqual(s1.demographics.get("gender"), "महिला (Female)")
+
+        # 2. Auto-correction when wrong gender spoken
+        s2 = SehatSessionState(session_id="test_ishwari_2")
+        self.dialogue._extract_demographics(s2, "ईश्वरी, 22 वर्ष, पुरुष")
+        self.assertEqual(s2.demographics.get("name"), "ईश्वरी")
+        self.assertEqual(s2.demographics.get("gender"), "महिला (Female)")
+
+        # 3. Marathi input with name and age
+        s3 = SehatSessionState(session_id="test_ishwari_3")
+        self.dialogue._extract_demographics(s3, "माझे नाव ईश्वरी कदम आहे, वय २२ वर्षे")
+        self.assertEqual(s3.demographics.get("name"), "ईश्वरी कदम")
+        self.assertEqual(s3.demographics.get("age"), 22)
+        self.assertEqual(s3.demographics.get("gender"), "महिला (Female)")
 
     def test_family_history_positive_and_negative_recording(self):
         """Verify that positive and negative family history answers are accurately recorded in session state."""
@@ -456,6 +476,172 @@ class TestSehatAISuite(unittest.TestCase):
             self.assertIn("Age: 29", txt2)
             self.assertIn("NOT_DIABETIC", txt2)
             self.assertNotIn("रमेश कुमार", txt2)
+
+    # ========================================================
+    # 5. CONTEXT MEMORY & ADAPTIVE SELECTION TESTS
+    # ========================================================
+
+    def test_context_memory_high_sugar_adaptation(self):
+        """Verify that high blood sugar (>=250) dynamically boosts acute/medication questions."""
+        asked = ["COM_CONSENT", "COM_DEMOGRAPHICS", "COM_STATUS", "KD_DIABETES_TYPE", "KD_DURATION"]
+        completed = ["consent", "demographics", "diabetic_status", "diabetes_type", "diabetes_duration"]
+        
+        # Scenario with High Sugar (320 mg/dL)
+        q_high = self.selector.select_next_question(
+            current_branch="known_diabetic",
+            asked_question_ids=asked,
+            completed_topics=completed,
+            questions_asked_count=5,
+            demographics={"gender": "Male", "age": 55},
+            symptoms_reported=[],
+            risk_signals=[],
+            sugar_readings=[{"value": 320}],
+            context_memory={"has_high_sugar": True, "recent_sugar": 320}
+        )
+        self.assertIsNotNone(q_high)
+        self.assertIn(q_high["topic"], ["medications", "blood_sugar_readings", "thirst_and_urination", "vision_and_fatigue"])
+
+    def test_context_memory_neuropathy_symptoms_boost(self):
+        """Verify that reporting numbness/tingling symptoms prioritizes neuropathy & wounds topic."""
+        asked = ["COM_CONSENT", "COM_DEMOGRAPHICS", "COM_STATUS"]
+        completed = ["consent", "demographics", "diabetic_status"]
+        
+        q_neuro = self.selector.select_next_question(
+            current_branch="known_diabetic",
+            asked_question_ids=asked,
+            completed_topics=completed,
+            questions_asked_count=3,
+            demographics={"gender": "Male", "age": 60},
+            symptoms_reported=["numbness_tingling"],
+            risk_signals=[],
+            context_memory={"foot_issues": True}
+        )
+        self.assertIsNotNone(q_neuro)
+        self.assertEqual(q_neuro["topic"], "neuropathy_and_wounds")
+
+    def test_context_memory_no_symptoms_pruning(self):
+        """Verify that explicitly stating 'no symptoms' prunes redundant symptom queries in unsure branch."""
+        asked = ["COM_CONSENT", "COM_DEMOGRAPHICS", "COM_STATUS"]
+        completed = ["consent", "demographics", "diabetic_status"]
+        
+        q_pruned = self.selector.select_next_question(
+            current_branch="unsure",
+            asked_question_ids=asked,
+            completed_topics=completed,
+            questions_asked_count=3,
+            demographics={"gender": "Male", "age": 45},
+            symptoms_reported=[],
+            risk_signals=[],
+            symptoms_denied=["all_symptoms"],
+            context_memory={"no_symptoms": True}
+        )
+        self.assertIsNotNone(q_pruned)
+        # Should skip classic_symptoms, energy_and_vision, healing_and_numbness -> go directly to family_history or testing
+        self.assertIn(q_pruned["topic"], ["family_history", "previous_testing", "lifestyle_factors", "closing_remarks"])
+
+    def test_context_memory_dialogue_framing(self):
+        """Verify that the Dialogue Manager references previous answers using context memory."""
+        sid = "sess_ctx_mem_001"
+        self.dialogue.start_session(sid)
+        self.dialogue.process_turn(sid, "हाँ, मैं सहमत हूँ")
+        self.dialogue.process_turn(sid, "मेरा नाम अजय शर्मा है, उम्र 48 वर्ष, पुरुष")
+        self.dialogue.process_turn(sid, "हाँ मुझे 4 साल से टाइप 2 डायबिटीज है")
+        
+        # Answer with high sugar reading 310
+        state = GLOBAL_SESSION_STORE.get(sid)
+        state.current_question_id = "KD_SUGAR_LEVELS"
+        res = self.dialogue.process_turn(sid, "मेरी हालिया शुगर 310 आई थी")
+        
+        # Verify state context memory is recorded
+        self.assertEqual(state.context_memory.get("recent_sugar"), 310)
+        self.assertTrue(state.context_memory.get("has_high_sugar"))
+        self.assertEqual(state.sugar_category, "severe_hyperglycemia")
+        
+        # Verify AI's next question acknowledged the high blood sugar level
+        self.assertIn("310", res["bot_speech_hi"])
+
+    # ========================================================
+    # 6. PATIENT REGISTRY & RETURNING FOLLOW-UP CONSULTATION TESTS
+    # ========================================================
+
+    def test_patient_registry_persistence(self):
+        """Verify that completing a consultation saves the patient record in PatientRegistry."""
+        from session_store.patient_registry import GLOBAL_PATIENT_REGISTRY
+        sid = "sess_reg_test_001"
+        self.dialogue.start_session(sid)
+        self.dialogue.process_turn(sid, "हाँ, मैं सहमत हूँ")
+        self.dialogue.process_turn(sid, "मेरा नाम प्रकाश देशमुख है, उम्र 54 साल, पुरुष")
+        self.dialogue.process_turn(sid, "हाँ, मुझे 3 साल से टाइप 2 डायबिटीज है")
+        state = GLOBAL_SESSION_STORE.get(sid)
+        state.blood_sugar_readings.append({"value": 240, "raw": "240"})
+        state.medications.append("Metformin 500mg")
+        state.is_completed = True
+        
+        # Save visit
+        record = GLOBAL_PATIENT_REGISTRY.save_patient_visit(state)
+        self.assertIsNotNone(record)
+        self.assertEqual(record["name"], "प्रकाश देशमुख")
+        self.assertEqual(record["age"], 54)
+        self.assertEqual(record["last_blood_sugar"], 240)
+        self.assertIn("Metformin 500mg", record["active_medications"])
+        
+        # Verify find_patient finds Prakash Deshmukh
+        found = GLOBAL_PATIENT_REGISTRY.find_patient("प्रकाश देशमुख")
+        self.assertIsNotNone(found)
+        self.assertEqual(found["name"], "प्रकाश देशमुख")
+
+    def test_returning_patient_followup_recognition(self):
+        """Verify that a returning patient is greeted with past history and skips redundant baseline questions."""
+        from session_store.patient_registry import GLOBAL_PATIENT_REGISTRY
+        
+        # Seed an existing patient profile
+        sid_init = "sess_seed_prakash"
+        self.dialogue.start_session(sid_init)
+        state_init = GLOBAL_SESSION_STORE.get(sid_init)
+        state_init.demographics = {"name": "प्रकाश देशमुख", "age": 54, "gender": "पुरुष (Male)"}
+        state_init.branch = "known_diabetic"
+        state_init.diabetes_type = "टाइप 2 (Type 2)"
+        state_init.medications = ["Metformin 500mg"]
+        state_init.blood_sugar_readings = [{"value": 240}]
+        state_init.is_completed = True
+        GLOBAL_PATIENT_REGISTRY.save_patient_visit(state_init)
+        
+        # Start follow-up session for Prakash Deshmukh
+        fu_sid = "sess_fu_prakash_002"
+        state_fu, greeting = self.dialogue.start_followup_session("प्रकाश देशमुख", fu_sid)
+        
+        # Verify follow-up branch and starting question
+        self.assertEqual(state_fu.branch, "follow_up")
+        self.assertEqual(state_fu.current_question_id, "FU_RECENT_SUGAR")
+        self.assertEqual(state_fu.demographics.get("name"), "प्रकाश देशमुख")
+        
+        # Verify baseline questions are already completed
+        self.assertIn("consent", state_fu.completed_topics)
+        self.assertIn("demographics", state_fu.completed_topics)
+        self.assertIn("diabetic_status", state_fu.completed_topics)
+        
+        # Verify greeting mentions Prakash ji and past history
+        self.assertIn("प्रकाश देशमुख", greeting)
+        self.assertTrue("दोबारा स्वागत" in greeting or "स्वागत" in greeting)
+
+    def test_followup_question_selection_flow(self):
+        """Verify QuestionSelector routes through follow-up questions for returning patients."""
+        asked = ["FU_RECENT_SUGAR"]
+        completed = ["consent", "demographics", "diabetic_status", "blood_sugar_readings"]
+        
+        q_next = self.selector.select_next_question(
+            current_branch="follow_up",
+            asked_question_ids=asked,
+            completed_topics=completed,
+            questions_asked_count=1,
+            demographics={"name": "प्रकाश देशमुख", "age": 54, "gender": "Male"},
+            symptoms_reported=[],
+            risk_signals=[],
+            max_budget=8
+        )
+        self.assertIsNotNone(q_next)
+        self.assertEqual(q_next["branch"], "follow_up")
+        self.assertIn(q_next["question_id"], ["FU_MED_COMPLIANCE", "FU_SYMPTOM_PROGRESSION", "FU_HYPO_EPISODES", "FU_LIFESTYLE_UPDATE"])
 
 
 if __name__ == "__main__":

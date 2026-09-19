@@ -1,0 +1,1198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Dibatic Dost — Admin Consultations Portal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Outfit:wght@500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/png" sizes="32x32" href="/static/diabetes_dost_logo.png?v=4">
+  <link rel="shortcut icon" href="/static/diabetes_dost_logo.png?v=4">
+  <link rel="apple-touch-icon" href="/static/diabetes_dost_logo.png?v=4">
+
+  <style>
+    :root {
+      --bg-primary: #f4f7fb;
+      --bg-card: #ffffff;
+      --navy-900: #0f172a;
+      --navy-800: #1e293b;
+      --navy-700: #334155;
+      --teal-600: #0ea5a8;
+      --teal-700: #0b8082;
+      --teal-50: #ecfdf5;
+      --blue-600: #2563eb;
+      --blue-50: #eff6ff;
+      --red-600: #dc2626;
+      --red-50: #fef2f2;
+      --amber-600: #d97706;
+      --amber-50: #fffbeb;
+      --gray-200: #e2e8f0;
+      --gray-300: #cbd5e1;
+      --text-main: #1e293b;
+      --text-muted: #64748b;
+      --radius-sm: 8px;
+      --radius-md: 12px;
+      --radius-lg: 16px;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.05);
+      --shadow-md: 0 4px 16px -2px rgba(15, 23, 42, 0.08);
+      --shadow-lg: 0 10px 30px -5px rgba(15, 23, 42, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      background-color: var(--bg-primary);
+      color: var(--text-main);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Top Navigation Header */
+    .admin-header {
+      background: #ffffff;
+      border-bottom: 1px solid var(--gray-200);
+      padding: 14px 28px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand-wrap {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      text-decoration: none;
+    }
+
+    .brand-icon {
+      width: 40px;
+      height: 40px;
+      border-radius: var(--radius-md);
+      background: linear-gradient(135deg, #0ea5a8 0%, #0284c7 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #ffffff;
+      font-size: 1.2rem;
+      box-shadow: 0 4px 12px rgba(14, 165, 168, 0.3);
+    }
+
+    .brand-text h1 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--navy-900);
+      letter-spacing: -0.3px;
+    }
+
+    .brand-text p {
+      font-size: 0.75rem;
+      color: var(--text-muted);
+      font-weight: 600;
+    }
+
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+    }
+
+    .user-pill {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      background: var(--blue-50);
+      border: 1px solid #bfdbfe;
+      padding: 6px 14px;
+      border-radius: 999px;
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--blue-600);
+    }
+
+    .btn-secondary-link {
+      background: #ffffff;
+      border: 1px solid var(--gray-300);
+      color: var(--navy-800);
+      padding: 8px 16px;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-weight: 700;
+      text-decoration: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .btn-secondary-link:hover {
+      background: #f8fafc;
+      border-color: var(--navy-700);
+    }
+
+    .btn-danger-link {
+      background: var(--red-50);
+      border: 1px solid #fecaca;
+      color: var(--red-600);
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-danger-link:hover {
+      background: #fee2e2;
+    }
+
+    /* Main Container */
+    .admin-container {
+      max-width: 1440px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 24px 28px;
+      flex: 1;
+    }
+
+    /* Stat Metrics Cards */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 18px;
+      margin-bottom: 24px;
+    }
+
+    .stat-card {
+      background: var(--bg-card);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 20px;
+      box-shadow: var(--shadow-sm);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      transition: transform 0.2s ease;
+    }
+
+    .stat-card:hover {
+      transform: translateY(-2px);
+    }
+
+    .stat-details span {
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .stat-details h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      color: var(--navy-900);
+      margin-top: 4px;
+    }
+
+    .stat-icon-wrap {
+      width: 48px;
+      height: 48px;
+      border-radius: var(--radius-md);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1.4rem;
+    }
+
+    .stat-icon-wrap.teal { background: #e0f2fe; color: #0284c7; }
+    .stat-icon-wrap.red { background: var(--red-50); color: var(--red-600); }
+    .stat-icon-wrap.green { background: var(--teal-50); color: #059669; }
+    .stat-icon-wrap.purple { background: #faf5ff; color: #9333ea; }
+
+    /* Filter & Search Bar */
+    .controls-panel {
+      background: var(--bg-card);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 16px 20px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 16px;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #f8fafc;
+      border: 1px solid var(--gray-200);
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+      flex: 1;
+      max-width: 420px;
+    }
+
+    .search-box input {
+      border: none;
+      background: transparent;
+      outline: none;
+      font-family: inherit;
+      font-size: 0.88rem;
+      width: 100%;
+      color: var(--navy-900);
+    }
+
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .filter-select {
+      background: #f8fafc;
+      border: 1px solid var(--gray-200);
+      padding: 8px 12px;
+      border-radius: var(--radius-md);
+      font-family: inherit;
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--navy-800);
+      outline: none;
+      cursor: pointer;
+    }
+
+    .btn-refresh {
+      background: #ffffff;
+      border: 1px solid var(--gray-300);
+      padding: 8px 14px;
+      border-radius: var(--radius-md);
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--navy-800);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .btn-refresh:hover {
+      background: #f1f5f9;
+    }
+
+    /* Consultations Table Card */
+    .table-card {
+      background: var(--bg-card);
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-sm);
+      overflow: hidden;
+    }
+
+    .table-header-title {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .table-header-title h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--navy-900);
+    }
+
+    .table-responsive {
+      overflow-x: auto;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      text-align: left;
+    }
+
+    th {
+      background: #f8fafc;
+      padding: 12px 20px;
+      font-size: 0.78rem;
+      font-weight: 800;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      border-bottom: 1px solid var(--gray-200);
+    }
+
+    td {
+      padding: 14px 20px;
+      font-size: 0.86rem;
+      color: var(--navy-800);
+      border-bottom: 1px solid #f1f5f9;
+      vertical-align: middle;
+    }
+
+    tr:hover td {
+      background: #fcfdfe;
+    }
+
+    .patient-badge-cell {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    .patient-avatar-mini {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      background: #e0f2fe;
+      color: #0369a1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 0.85rem;
+    }
+
+    .patient-meta-lines h4 {
+      font-size: 0.88rem;
+      font-weight: 700;
+      color: var(--navy-900);
+    }
+
+    .patient-meta-lines p {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+    }
+
+    /* Badges */
+    .urgency-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 0.74rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .urgency-badge.routine {
+      background: #ecfdf5;
+      color: #047857;
+      border: 1px solid #a7f3d0;
+    }
+
+    .urgency-badge.urgent {
+      background: #fffbeb;
+      color: #b45309;
+      border: 1px solid #fde68a;
+    }
+
+    .urgency-badge.emergency {
+      background: #fef2f2;
+      color: #b91c1c;
+      border: 1px solid #fecaca;
+      animation: pulse-red 2s infinite;
+    }
+
+    @keyframes pulse-red {
+      0% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.4); }
+      70% { box-shadow: 0 0 0 6px rgba(220, 38, 38, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(220, 38, 38, 0); }
+    }
+
+    .btn-table-action {
+      background: #ffffff;
+      border: 1px solid var(--gray-300);
+      padding: 6px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--blue-600);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-table-action:hover {
+      background: var(--blue-50);
+      border-color: var(--blue-600);
+    }
+
+    .btn-table-delete {
+      background: #ffffff;
+      border: 1px solid #fecaca;
+      padding: 6px 10px;
+      border-radius: var(--radius-sm);
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--red-600);
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-left: 6px;
+      transition: all 0.2s ease;
+    }
+
+    .btn-table-delete:hover {
+      background: #fee2e2;
+    }
+
+    /* Modal / Drawer Styling */
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(15, 23, 42, 0.6);
+      backdrop-filter: blur(4px);
+      z-index: 100;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.2s ease;
+    }
+
+    .modal-overlay.active {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .modal-box {
+      background: #ffffff;
+      border-radius: var(--radius-lg);
+      max-width: 800px;
+      width: 100%;
+      max-height: 90vh;
+      display: flex;
+      flex-direction: column;
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      animation: modalSlide 0.25s ease-out;
+    }
+
+    @keyframes modalSlide {
+      from { transform: translateY(16px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    .modal-header {
+      padding: 18px 24px;
+      border-bottom: 1px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: #f8fafc;
+    }
+
+    .modal-header h3 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.2rem;
+      font-weight: 800;
+      color: var(--navy-900);
+    }
+
+    .btn-close-modal {
+      background: transparent;
+      border: none;
+      font-size: 1.4rem;
+      cursor: pointer;
+      color: var(--text-muted);
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .btn-close-modal:hover {
+      background: var(--gray-200);
+      color: var(--navy-900);
+    }
+
+    .modal-body {
+      padding: 24px;
+      overflow-y: auto;
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+
+    .modal-footer {
+      padding: 14px 24px;
+      border-top: 1px solid var(--gray-200);
+      display: flex;
+      align-items: center;
+      justify-content: flex-end;
+      gap: 12px;
+      background: #f8fafc;
+    }
+
+    .summary-text-block {
+      background: #f8fafc;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-md);
+      padding: 16px;
+      line-height: 1.6;
+      font-size: 0.88rem;
+    }
+
+    .qa-turn-item {
+      background: #fcfdfe;
+      border: 1px solid #e2e8f0;
+      border-radius: var(--radius-md);
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      border-left: 3px solid var(--teal-600);
+    }
+
+    .qa-q-text {
+      color: var(--teal-700);
+      font-weight: 700;
+      font-size: 0.84rem;
+    }
+
+    .qa-a-text {
+      color: var(--navy-900);
+      font-size: 0.86rem;
+      margin-top: 4px;
+    }
+
+    /* Auth Login View */
+    .login-container {
+      max-width: 440px;
+      margin: 80px auto;
+      background: #ffffff;
+      border: 1px solid var(--gray-200);
+      border-radius: var(--radius-lg);
+      padding: 36px 32px;
+      box-shadow: var(--shadow-lg);
+      text-align: center;
+    }
+
+    .login-icon-badge {
+      width: 60px;
+      height: 60px;
+      border-radius: 16px;
+      background: linear-gradient(135deg, #0ea5a8 0%, #0284c7 100%);
+      color: white;
+      font-size: 1.8rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 16px auto;
+      box-shadow: 0 8px 20px rgba(14, 165, 168, 0.35);
+    }
+
+    .login-container h2 {
+      font-family: 'Outfit', sans-serif;
+      font-size: 1.5rem;
+      font-weight: 800;
+      color: var(--navy-900);
+    }
+
+    .login-container p {
+      font-size: 0.84rem;
+      color: var(--text-muted);
+      margin-top: 6px;
+      margin-bottom: 24px;
+    }
+
+    .form-group {
+      text-align: left;
+      margin-bottom: 16px;
+    }
+
+    .form-group label {
+      display: block;
+      font-size: 0.78rem;
+      font-weight: 700;
+      color: var(--navy-800);
+      margin-bottom: 6px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+
+    .form-input {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid var(--gray-300);
+      border-radius: var(--radius-md);
+      font-family: inherit;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s ease;
+    }
+
+    .form-input:focus {
+      border-color: var(--teal-600);
+      box-shadow: 0 0 0 3px rgba(14, 165, 168, 0.15);
+    }
+
+    .btn-login-submit {
+      width: 100%;
+      background: linear-gradient(135deg, #0ea5a8 0%, #0284c7 100%);
+      color: #ffffff;
+      border: none;
+      padding: 12px;
+      border-radius: var(--radius-md);
+      font-size: 0.95rem;
+      font-weight: 800;
+      cursor: pointer;
+      margin-top: 10px;
+      box-shadow: 0 4px 12px rgba(14, 165, 168, 0.3);
+      transition: opacity 0.2s ease;
+    }
+
+    .btn-login-submit:hover {
+      opacity: 0.95;
+    }
+
+    .login-error-msg {
+      background: #fef2f2;
+      border: 1px solid #fecaca;
+      color: #b91c1c;
+      padding: 8px 12px;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      margin-bottom: 14px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- ==========================================
+       LOGIN VIEW
+       ========================================== -->
+  <div id="login-view" class="login-container" style="display: none;">
+    <img src="/static/diabetes_dost_logo.png" alt="Dibatic Dost" style="width: 72px; height: 72px; border-radius: 16px; object-fit: cover; margin: 0 auto 14px auto; display: block; box-shadow: 0 4px 14px rgba(14, 165, 168, 0.25); border: 1px solid rgba(14, 165, 168, 0.2);">
+    <h2>Dibatic Dost Admin</h2>
+    <p>Sign in to review clinical voice consultations & patient triage reports</p>
+
+    <div id="login-error" class="login-error-msg"></div>
+
+    <form onsubmit="handleLoginSubmit(event)">
+      <div class="form-group">
+        <label for="admin-username">Username</label>
+        <input type="text" id="admin-username" class="form-input" placeholder="admin" required autocomplete="username">
+      </div>
+
+      <div class="form-group">
+        <label for="admin-password">Password</label>
+        <input type="password" id="admin-password" class="form-input" placeholder="••••••••" required autocomplete="current-password">
+      </div>
+
+      <button type="submit" class="btn-login-submit" id="btn-login-btn">
+        Login to Admin Portal 🔐
+      </button>
+
+    </form>
+  </div>
+
+
+  <!-- ==========================================
+       AUTHENTICATED DASHBOARD VIEW
+       ========================================== -->
+  <div id="dashboard-view" style="display: none; flex-direction: column; min-height: 100vh;">
+    <!-- Top Header -->
+    <header class="admin-header">
+      <a href="/" class="brand-wrap">
+        <img src="/static/diabetes_dost_logo.png" alt="Dibatic Dost" style="width: 42px; height: 42px; border-radius: 10px; object-fit: cover; box-shadow: 0 2px 8px rgba(14, 165, 168, 0.2);">
+        <div class="brand-text">
+          <h1>Dibatic Dost — Admin Portal</h1>
+          <p>Consultation Records & Clinical Triage Database (SQLite)</p>
+        </div>
+      </a>
+
+      <div class="header-actions">
+        <div class="user-pill">
+          <span>👨‍⚕️</span> <span id="admin-display-name">Admin</span>
+        </div>
+
+        <a href="/" class="btn-secondary-link">
+          <span>🎙️</span> Patient Pre-Screener
+        </a>
+
+        <button onclick="handleLogout()" class="btn-danger-link">
+          <span>🚪</span> Logout
+        </button>
+      </div>
+    </header>
+
+    <div class="admin-container">
+      <!-- 4 Stat Metrics Cards -->
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-details">
+            <span>Total Consultations</span>
+            <h3 id="stat-total-consultations">0</h3>
+          </div>
+          <div class="stat-icon-wrap teal">📋</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-details">
+            <span>Emergency Alerts</span>
+            <h3 id="stat-emergency-cases" style="color: #dc2626;">0</h3>
+          </div>
+          <div class="stat-icon-wrap red">🚨</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-details">
+            <span>Routine Reviews</span>
+            <h3 id="stat-routine-reviews" style="color: #059669;">0</h3>
+          </div>
+          <div class="stat-icon-wrap green">✅</div>
+        </div>
+
+        <div class="stat-card">
+          <div class="stat-details">
+            <span>Unique Patients</span>
+            <h3 id="stat-total-patients">0</h3>
+          </div>
+          <div class="stat-icon-wrap purple">👥</div>
+        </div>
+      </div>
+
+      <!-- Controls Panel (Search & Urgency Filters) -->
+      <div class="controls-panel">
+        <div class="search-box">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input type="text" id="filter-search-input" placeholder="Search by patient name, ID, or session..." oninput="debounceSearch()">
+        </div>
+
+        <div class="filter-group">
+          <select id="filter-urgency-select" class="filter-select" onchange="fetchConsultations()">
+            <option value="all">All Urgencies</option>
+            <option value="routine">Routine</option>
+            <option value="urgent">Urgent</option>
+            <option value="emergency">Emergency</option>
+          </select>
+
+          <button class="btn-refresh" onclick="fetchDashboardData()">
+            <span>🔄</span> Refresh
+          </button>
+        </div>
+      </div>
+
+      <!-- Consultations Table Card -->
+      <div class="table-card">
+        <div class="table-header-title">
+          <h2>Patient Consultations History</h2>
+          <span id="table-count-label" style="font-size: 0.82rem; font-weight: 700; color: var(--text-muted);">Showing 0 consultations</span>
+        </div>
+
+        <div class="table-responsive">
+          <table>
+            <thead>
+              <tr>
+                <th>Date & Time</th>
+                <th>Patient Details</th>
+                <th>Diabetes Profile</th>
+                <th>Branch</th>
+                <th>Triage Urgency</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="consultations-tbody">
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 32px; color: var(--text-muted);">
+                  Loading consultations from SQLite database...
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==========================================
+       CONSULTATION DETAIL MODAL
+       ========================================== -->
+  <div id="detail-modal" class="modal-overlay" onclick="closeDetailModal(event)">
+    <div class="modal-box" onclick="event.stopPropagation()">
+      <div class="modal-header">
+        <h3 id="modal-patient-title">Consultation Details</h3>
+        <button class="btn-close-modal" onclick="hideModal()">×</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Patient Meta Top Strip -->
+        <div style="display: flex; justify-content: space-between; align-items: center; background: #f1f5f9; padding: 12px 16px; border-radius: 8px;">
+          <div>
+            <div style="font-size: 0.76rem; color: #64748b; font-weight: 700;">SESSION ID</div>
+            <div id="modal-session-id" style="font-family: monospace; font-size: 0.88rem; font-weight: 800; color: #0f172a;">—</div>
+          </div>
+          <div id="modal-urgency-badge-wrap">
+            <span class="urgency-badge routine" id="modal-urgency-badge">Routine</span>
+          </div>
+        </div>
+
+        <!-- Clinical Summaries (En & Hi) -->
+        <div>
+          <h4 style="font-size: 0.9rem; font-weight: 800; color: var(--navy-900); margin-bottom: 6px;">
+            📄 English Clinical Triage Summary
+          </h4>
+          <div class="summary-text-block" id="modal-summary-en">—</div>
+        </div>
+
+        <div>
+          <h4 style="font-size: 0.9rem; font-weight: 800; color: var(--navy-900); margin-bottom: 6px;">
+            🇮🇳 Hindi Patient Narrative
+          </h4>
+          <div class="summary-text-block" id="modal-summary-hi">—</div>
+        </div>
+
+        <!-- Q&A Dialogue Flow -->
+        <div>
+          <h4 style="font-size: 0.9rem; font-weight: 800; color: var(--navy-900); margin-bottom: 10px;">
+            🗣️ Voice Dialogue Q&A History
+          </h4>
+          <div id="modal-qa-container"></div>
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn-secondary-link" onclick="downloadSelectedTxt()">
+          💾 Download .TXT
+        </button>
+        <button class="btn-secondary-link" onclick="downloadSelectedJson()">
+          📋 Download .JSON
+        </button>
+        <button class="btn-secondary-link" style="background: var(--navy-900); color: #ffffff; border: none;" onclick="hideModal()">
+          Done
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ==========================================
+       JAVASCRIPT LOGIC
+       ========================================== -->
+  <script>
+    let authToken = localStorage.getItem('diabetes_dost_admin_token') || null;
+    let selectedSessionId = null;
+    let searchDebounceTimer = null;
+
+    async function initAdminPortal() {
+      if (!authToken) {
+        showLoginView();
+        return;
+      }
+      try {
+        const res = await fetch(`/api/admin/check-auth?token=${encodeURIComponent(authToken)}`);
+        const data = await res.json();
+        if (data.status === 'success') {
+          document.getElementById('admin-display-name').textContent = data.user.full_name || data.user.username;
+          showDashboardView();
+          fetchDashboardData();
+        } else {
+          showLoginView();
+        }
+      } catch (err) {
+        showLoginView();
+      }
+    }
+
+    function showLoginView() {
+      document.getElementById('login-view').style.display = 'block';
+      document.getElementById('dashboard-view').style.display = 'none';
+    }
+
+    function showDashboardView() {
+      document.getElementById('login-view').style.display = 'none';
+      document.getElementById('dashboard-view').style.display = 'flex';
+    }
+
+    async function handleLoginSubmit(e) {
+      e.preventDefault();
+      const usernameInput = document.getElementById('admin-username');
+      const passwordInput = document.getElementById('admin-password');
+      const errorDiv = document.getElementById('login-error');
+      const btn = document.getElementById('btn-login-btn');
+
+      errorDiv.style.display = 'none';
+      btn.textContent = 'Verifying...';
+
+      try {
+        const res = await fetch('/api/admin/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            username: usernameInput.value.trim(),
+            password: passwordInput.value
+          })
+        });
+        const data = await res.json();
+        if (res.ok && data.status === 'success') {
+          authToken = data.token;
+          localStorage.setItem('diabetes_dost_admin_token', authToken);
+          document.getElementById('admin-display-name').textContent = data.user.full_name || data.user.username;
+          showDashboardView();
+          fetchDashboardData();
+        } else {
+          errorDiv.textContent = data.detail || 'Invalid username or password.';
+          errorDiv.style.display = 'block';
+        }
+      } catch (err) {
+        errorDiv.textContent = 'Network or server error during login.';
+        errorDiv.style.display = 'block';
+      } finally {
+        btn.textContent = 'Login to Admin Portal 🔐';
+      }
+    }
+
+    async function handleLogout() {
+      if (authToken) {
+        const formData = new FormData();
+        formData.append('token', authToken);
+        try {
+          await fetch('/api/admin/logout', { method: 'POST', body: formData });
+        } catch (e) {}
+      }
+      localStorage.removeItem('diabetes_dost_admin_token');
+      authToken = null;
+      showLoginView();
+    }
+
+    async function fetchDashboardData() {
+      await Promise.all([
+        fetchMetrics(),
+        fetchConsultations()
+      ]);
+    }
+
+    async function fetchMetrics() {
+      try {
+        const res = await fetch('/api/admin/metrics');
+        const data = await res.json();
+        if (data.status === 'success') {
+          const m = data.metrics;
+          document.getElementById('stat-total-consultations').textContent = m.total_consultations;
+          document.getElementById('stat-emergency-cases').textContent = m.emergency_cases;
+          document.getElementById('stat-routine-reviews').textContent = m.routine_reviews;
+          document.getElementById('stat-total-patients').textContent = m.total_patients;
+        }
+      } catch (e) {}
+    }
+
+    function debounceSearch() {
+      clearTimeout(searchDebounceTimer);
+      searchDebounceTimer = setTimeout(() => {
+        fetchConsultations();
+      }, 300);
+    }
+
+    async function fetchConsultations() {
+      const searchVal = document.getElementById('filter-search-input').value.trim();
+      const urgencyVal = document.getElementById('filter-urgency-select').value;
+      const tbody = document.getElementById('consultations-tbody');
+
+      let url = `/api/admin/consultations?limit=100`;
+      if (searchVal) url += `&search=${encodeURIComponent(searchVal)}`;
+      if (urgencyVal && urgencyVal !== 'all') url += `&urgency=${encodeURIComponent(urgencyVal)}`;
+
+      try {
+        const res = await fetch(url);
+        const data = await res.json();
+        if (data.status === 'success') {
+          const list = data.data.consultations || [];
+          document.getElementById('table-count-label').textContent = `Showing ${list.length} of ${data.data.total} consultations`;
+
+          if (list.length === 0) {
+            tbody.innerHTML = `
+              <tr>
+                <td colspan="6" style="text-align: center; padding: 40px; color: var(--text-muted);">
+                  No consultations found matching your filters.
+                </td>
+              </tr>
+            `;
+            return;
+          }
+
+          tbody.innerHTML = list.map(c => {
+            const dateStr = c.created_at ? new Date(c.created_at).toLocaleString([], {
+              day: '2-digit', month: 'short', year: 'numeric',
+              hour: '2-digit', minute: '2-digit'
+            }) : '—';
+
+            const patientName = c.patient_name || 'Patient';
+            const ageGender = (c.age ? `${c.age}Y` : '') + (c.gender ? ` • ${c.gender}` : '');
+            const initial = patientName.charAt(0).toUpperCase();
+            const urgency = (c.recommended_urgency || 'routine').toLowerCase();
+
+            return `
+              <tr>
+                <td style="font-weight: 600; color: #475569; white-space: nowrap;">${dateStr}</td>
+                <td>
+                  <div class="patient-badge-cell">
+                    <div class="patient-avatar-mini">${initial}</div>
+                    <div class="patient-meta-lines">
+                      <h4>${escapeHtml(patientName)}</h4>
+                      <p>${ageGender} ${c.patient_id ? '• ID: ' + escapeHtml(c.patient_id) : ''}</p>
+                    </div>
+                  </div>
+                </td>
+                <td>
+                  <span style="font-weight: 700; color: #0284c7;">${escapeHtml(c.diabetes_type || 'Type 2')}</span>
+                </td>
+                <td>
+                  <span style="font-size: 0.8rem; background: #f1f5f9; padding: 2px 8px; border-radius: 4px; font-weight: 600;">
+                    ${escapeHtml(c.branch || 'common')}
+                  </span>
+                </td>
+                <td>
+                  <span class="urgency-badge ${urgency}">
+                    ${urgency === 'emergency' ? '🚨 Emergency' : (urgency === 'urgent' ? '⚠️ Urgent' : '✅ Routine')}
+                  </span>
+                </td>
+                <td>
+                  <button class="btn-table-action" onclick="viewConsultationDetail('${c.session_id}')">
+                    <span>👁️</span> View
+                  </button>
+                  <button class="btn-table-delete" onclick="deleteConsultationRecord('${c.session_id}')" title="Delete record">
+                    🗑️
+                  </button>
+                </td>
+              </tr>
+            `;
+          }).join('');
+        }
+      } catch (e) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="6" style="text-align: center; padding: 30px; color: #dc2626;">
+              Failed to load consultations from database.
+            </td>
+          </tr>
+        `;
+      }
+    }
+
+    async function viewConsultationDetail(sessionId) {
+      selectedSessionId = sessionId;
+      try {
+        const res = await fetch(`/api/admin/consultations/${sessionId}`);
+        const data = await res.json();
+        if (data.status === 'success') {
+          const c = data.consultation;
+          const p = c.patient_name || 'Patient';
+          document.getElementById('modal-patient-title').textContent = `Consultation: ${p} (${c.age || '—'}Y / ${c.gender || '—'})`;
+          document.getElementById('modal-session-id').textContent = c.session_id;
+
+          const urgency = (c.recommended_urgency || 'routine').toLowerCase();
+          const badgeEl = document.getElementById('modal-urgency-badge');
+          badgeEl.className = `urgency-badge ${urgency}`;
+          badgeEl.textContent = urgency.toUpperCase();
+
+          document.getElementById('modal-summary-en').textContent = c.summary_en || 'Summary not recorded.';
+          document.getElementById('modal-summary-hi').textContent = c.summary_hi || 'सारांश उपलब्ध नाही.';
+
+          const qaContainer = document.getElementById('modal-qa-container');
+          if (c.qa_transcript && c.qa_transcript.length > 0) {
+            qaContainer.innerHTML = c.qa_transcript.map((q, idx) => `
+              <div class="qa-turn-item">
+                <div class="qa-q-text">Q${idx + 1}: ${escapeHtml(q.question_asked_hi || q.question || '')}</div>
+                <div class="qa-a-text">🗣️ ${escapeHtml(q.patient_answer_hi || q.answer || '—')}</div>
+              </div>
+            `).join('');
+          } else {
+            qaContainer.innerHTML = '<p style="color: var(--text-muted); font-size: 0.84rem;">No dialogue turns recorded.</p>';
+          }
+
+          document.getElementById('detail-modal').classList.add('active');
+        }
+      } catch (err) {
+        alert('Failed to load consultation details.');
+      }
+    }
+
+    function closeDetailModal(e) {
+      if (e.target.id === 'detail-modal') {
+        hideModal();
+      }
+    }
+
+    function hideModal() {
+      document.getElementById('detail-modal').classList.remove('active');
+      selectedSessionId = null;
+    }
+
+    async function deleteConsultationRecord(sessionId) {
+      if (!confirm(`Are you sure you want to delete consultation record ${sessionId}?`)) return;
+      try {
+        const res = await fetch(`/api/admin/consultations/${sessionId}`, { method: 'DELETE' });
+        const data = await res.json();
+        if (res.ok) {
+          fetchDashboardData();
+        } else {
+          alert(data.detail || 'Failed to delete record.');
+        }
+      } catch (e) {
+        alert('Network error deleting consultation.');
+      }
+    }
+
+    function downloadSelectedTxt() {
+      if (!selectedSessionId) return;
+      window.location.href = `/api/sehat/session/${selectedSessionId}/download`;
+    }
+
+    function downloadSelectedJson() {
+      if (!selectedSessionId) return;
+      window.location.href = `/api/sehat/session/${selectedSessionId}/download/json`;
+    }
+
+    function escapeHtml(str) {
+      if (!str) return '';
+      return String(str).replace(/[&<>"']/g, function(m) {
+        return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' }[m];
+      });
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      initAdminPortal();
+    });
+  </script>
+</body>
+</html>

@@ -19,14 +19,14 @@ def synthesize_local_speech(text: str, output_wav_path: Path, language: str = "h
     # Clean text of quotes that might break PowerShell script
     clean_txt = text.replace('"', ' ').replace("'", " ").replace("\n", " ").strip()
 
-    # Energetic male voice: faster rate (165 wpm), full volume, Male voice
+    # Polite, gentle doctor-companion voice pacing
     ps_command = (
         f'Add-Type -AssemblyName System.Speech; '
         f'$s = New-Object System.Speech.Synthesis.SpeechSynthesizer; '
         f'$voices = $s.GetInstalledVoices(); '
-        f'foreach ($v in $voices) {{ if ($v.VoiceInfo.Gender -eq "Male") {{ $s.SelectVoice($v.VoiceInfo.Name); break; }} }} '
-        f'$s.Rate = 3; '        # Energetic: +3 on SAPI scale (-10 slow to +10 fast; 3=lively)
-        f'$s.Volume = 100; '    # Energetic: full volume
+        f'foreach ($v in $voices) {{ if ($v.VoiceInfo.Gender -eq "Male" -or $v.VoiceInfo.Culture.Name -like "*IN*") {{ $s.SelectVoice($v.VoiceInfo.Name); break; }} }} '
+        f'$s.Rate = 0; '        # Steady, consistent natural doctor pacing across all turns
+        f'$s.Volume = 100; '    # Clear, uniform listening volume
         f'$s.SetOutputToWaveFile("{out_str}"); '
         f'$s.Speak("{clean_txt}"); '
         f'$s.Dispose()'
@@ -52,3 +52,5 @@ def synthesize_local_speech(text: str, output_wav_path: Path, language: str = "h
         except Exception:
             pass
     return False
+
+

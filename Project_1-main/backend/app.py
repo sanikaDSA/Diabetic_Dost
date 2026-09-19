@@ -12,22 +12,30 @@ from fastapi import FastAPI, UploadFile, File, Form, HTTPException, BackgroundTa
 from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
+from pathlib import Path
 from dotenv import load_dotenv
+
+# Ensure root and backend .env are loaded first before any service initialization
+BASE_DIR = Path(__file__).resolve().parent
+PROJECT_ROOT = BASE_DIR.parent
+for env_candidate in [PROJECT_ROOT / ".env", BASE_DIR / ".env", BASE_DIR / "config" / ".env.example"]:
+    if env_candidate.exists():
+        load_dotenv(dotenv_path=str(env_candidate), override=False)
 
 from orchestrator.orchestrator import GLOBAL_ORCHESTRATOR, SehatOrchestrator
 from session_store.session_store import GLOBAL_SESSION_STORE, SehatSessionState
+from session_store.patient_registry import GLOBAL_PATIENT_REGISTRY
 from emergency.emergency_detector import GLOBAL_EMERGENCY_DETECTOR, EmergencyDetector
 from doctor_delivery.doctor_service import GLOBAL_DOCTOR_DELIVERY, DoctorDeliveryService
 from audit.audit_logger import GLOBAL_AUDIT_LOGGER
 from audio_pipeline.cura_clinical_flow import GLOBAL_CURA_SESSIONS
+from database.db_manager import GLOBAL_DB
 from fastapi import WebSocket, WebSocketDisconnect
 
 EMERGENCY_ALERTS_FEED = GLOBAL_DOCTOR_DELIVERY.emergency_feed
 
-load_dotenv()
-
 def load_config(config_path: str = "config.yaml") -> Dict[str, Any]:
-    for candidate in [config_path, "backend/config.yaml", "../config.yaml", "e:/Diabetes/backend/config.yaml"]:
+    for candidate in [config_path, "backend/config.yaml", "../config.yaml", str(BASE_DIR / "config.yaml")]:
         if os.path.exists(candidate):
             try:
                 import yaml
@@ -54,8 +62,19 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-os.makedirs("static", exist_ok=True)
-app.mount("/static", StaticFiles(directory="static"), name="static")
+# Resolve static directory (support both root/static and backend/static)
+STATIC_DIR = PROJECT_ROOT / "static"
+if not STATIC_DIR.exists():
+    STATIC_DIR = BASE_DIR / "static"
+STATIC_DIR.mkdir(parents=True, exist_ok=True)
+app.mount("/static", StaticFiles(directory=str(STATIC_DIR)), name="static")
+
+@app.get("/favicon.ico", include_in_schema=False)
+async def favicon_endpoint():
+    fav_candidate = STATIC_DIR / "diabetes_dost_logo.png"
+    if fav_candidate.exists():
+        return FileResponse(fav_candidate, media_type="image/png")
+    return FileResponse(STATIC_DIR / "favicon.ico")
 
 training_state = {
     "is_training": False,
@@ -141,7 +160,15 @@ async def stream_audio(filename: str):
     for folder in ["outputs/reports", "datasets/processed_audio", "datasets/raw_audio"]:
         target = Path(folder) / filename
         if target.exists():
-            return FileResponse(str(target), media_type="audio/wav")
+            return FileResponse(
+                str(target),
+                media_type="audio/wav",
+                headers={
+                    "Cache-Control": "no-cache, no-store, must-revalidate",
+                    "Pragma": "no-cache",
+                    "Expires": "0"
+                }
+            )
     raise HTTPException(status_code=404, detail="Audio file not found")
 
 
@@ -154,6 +181,37 @@ async def stream_audio(filename: str):
 async def start_sehat_voice_session(session_id: Optional[str] = Form(None)):
     res = GLOBAL_ORCHESTRATOR.start_session(session_id=session_id)
     return JSONResponse(content=res)
+
+
+@app.post("/api/sehat/session/start_followup")
+@app.post("/api/cura/session/start_followup")
+async def start_sehat_followup_session(
+    patient_name: str = Form(...),
+    session_id: Optional[str] = Form(None)
+):
+    res = GLOBAL_ORCHESTRATOR.start_followup_session(patient_name_or_id=patient_name, session_id=session_id)
+    return JSONResponse(content=res)
+
+
+@app.get("/api/patients/list")
+async def list_registered_patients():
+    patients = GLOBAL_PATIENT_REGISTRY.list_all_patients()
+    return {
+        "status": "success",
+        "count": len(patients),
+        "patients": patients
+    }
+
+
+@app.get("/api/patients/{patient_name_or_id}/history")
+async def get_patient_history(patient_name_or_id: str):
+    record = GLOBAL_PATIENT_REGISTRY.find_patient(patient_name_or_id)
+    if not record:
+        raise HTTPException(status_code=404, detail=f"Patient '{patient_name_or_id}' not found.")
+    return {
+        "status": "success",
+        "patient": record
+    }
 
 
 @app.post("/api/sehat/session/turn")
@@ -180,7 +238,14 @@ async def process_sehat_voice_turn(
 async def get_sehat_session_summary(session_id: str):
     summary = GLOBAL_ORCHESTRATOR.get_session_summary(session_id)
     if not summary:
+        db_record = GLOBAL_DB.get_consultation_details(session_id)
+        if db_record and db_record.get("full_data"):
+            return {
+                "status": "success",
+                "summary": db_record["full_data"]
+            }
         raise HTTPException(status_code=404, detail=f"Session '{session_id}' not found.")
+    GLOBAL_DB.save_consultation(summary)
     return {
         "status": "success",
         "summary": summary
@@ -345,10 +410,75 @@ async def websocket_session_endpoint(websocket: WebSocket):
 
 
 # ==========================================
-# MODERN POOJA HOSPITAL WEB APP
+# MODERN WEB APP & ADMIN PORTAL
 # ==========================================
 TEMPLATES_DIR = Path(__file__).parent / "templates"
 INDEX_HTML_PATH = TEMPLATES_DIR / "index.html"
+ADMIN_HTML_PATH = TEMPLATES_DIR / "admin.html"
+
+class AdminLoginRequest(BaseModel):
+    username: str
+    password: str
+
+@app.post("/api/admin/login")
+async def admin_login(req: AdminLoginRequest):
+    auth_res = GLOBAL_DB.authenticate_admin(req.username, req.password)
+    if not auth_res:
+        raise HTTPException(status_code=401, detail="Invalid username or password.")
+    return {
+        "status": "success",
+        "message": "Authentication successful",
+        "token": auth_res["token"],
+        "user": {
+            "username": auth_res["username"],
+            "full_name": auth_res["full_name"],
+            "role": auth_res["role"]
+        }
+    }
+
+@app.get("/api/admin/check-auth")
+async def check_admin_auth(token: Optional[str] = None):
+    if not token:
+        raise HTTPException(status_code=401, detail="Authentication token required.")
+    user = GLOBAL_DB.verify_token(token)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid or expired session.")
+    return {"status": "success", "user": user}
+
+@app.post("/api/admin/logout")
+async def admin_logout(token: Optional[str] = Form(None)):
+    if token:
+        GLOBAL_DB.invalidate_token(token)
+    return {"status": "success", "message": "Logged out successfully."}
+
+@app.get("/api/admin/metrics")
+async def get_admin_metrics():
+    metrics = GLOBAL_DB.get_dashboard_metrics()
+    return {"status": "success", "metrics": metrics}
+
+@app.get("/api/admin/consultations")
+async def list_admin_consultations(
+    search: Optional[str] = None,
+    urgency: Optional[str] = None,
+    limit: int = 50,
+    offset: int = 0
+):
+    res = GLOBAL_DB.get_consultations(search=search, urgency=urgency, limit=limit, offset=offset)
+    return {"status": "success", "data": res}
+
+@app.get("/api/admin/consultations/{session_id}")
+async def get_admin_consultation_detail(session_id: str):
+    record = GLOBAL_DB.get_consultation_details(session_id)
+    if not record:
+        raise HTTPException(status_code=404, detail=f"Consultation '{session_id}' not found.")
+    return {"status": "success", "consultation": record}
+
+@app.delete("/api/admin/consultations/{session_id}")
+async def delete_admin_consultation(session_id: str):
+    deleted = GLOBAL_DB.delete_consultation(session_id)
+    if not deleted:
+        raise HTTPException(status_code=404, detail=f"Consultation '{session_id}' not found.")
+    return {"status": "success", "message": "Consultation deleted successfully."}
 
 @app.get("/", response_class=HTMLResponse)
 async def serve_cura_app():
@@ -357,9 +487,17 @@ async def serve_cura_app():
             return HTMLResponse(content=f.read())
     return HTMLResponse(content="<h1>Index template not found</h1>", status_code=404)
 
+@app.get("/admin", response_class=HTMLResponse)
+async def serve_admin_portal():
+    if ADMIN_HTML_PATH.exists():
+        with open(ADMIN_HTML_PATH, "r", encoding="utf-8") as f:
+            return HTMLResponse(content=f.read())
+    return HTMLResponse(content="<h1>Admin template not found</h1>", status_code=404)
+
 
 if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8000))
     host = os.getenv("HOST", "0.0.0.0")
     uvicorn.run(app, host=host, port=port)
+

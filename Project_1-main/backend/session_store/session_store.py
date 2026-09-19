@@ -32,10 +32,12 @@ class SehatSessionState:
         self.answers: List[Dict[str, Any]] = []
         self.question_retry_count: Dict[str, int] = {}
         self.demographic_retry_count: int = 0
+        self.status_retry_count: int = 0
 
-        # Clinical Findings
+        # Clinical Findings & Context Memory
         self.risk_signals: List[str] = []
         self.symptoms_reported: List[str] = []
+        self.symptoms_denied: List[str] = []
         self.diabetes_history: Dict[str, Any] = {}
         self.medications: List[str] = []
         self.blood_sugar_readings: List[Dict[str, Any]] = []
@@ -44,6 +46,10 @@ class SehatSessionState:
         self.pregnancy_history: Optional[bool] = None
         self.gestational_history: Optional[bool] = None
         self.diabetes_type: Optional[str] = None
+        self.sugar_category: Optional[str] = None
+        self.medication_category: Optional[str] = None
+        self.context_memory: Dict[str, Any] = {}
+        self.volunteered_slots: List[str] = []
 
         # Emergency & Urgency
         self.emergency_escalation: bool = False
@@ -57,13 +63,20 @@ class SehatSessionState:
         self.audio_ref: Optional[str] = None
 
     def record_answer(self, question_id: str, question_hi: str, patient_answer_hi: str, confidence: float = 0.95):
-        self.answers.append({
-            "question_id": question_id,
-            "question_asked_hi": question_hi,
-            "patient_answer_hi": patient_answer_hi,
-            "timestamp": datetime.now(timezone.utc).isoformat(),
-            "confidence": confidence
-        })
+        # If the last recorded answer was for the same question, update it with the latest corrected answer
+        if self.answers and self.answers[-1]["question_id"] == question_id:
+            self.answers[-1]["patient_answer_hi"] = patient_answer_hi
+            self.answers[-1]["question_asked_hi"] = question_hi
+            self.answers[-1]["timestamp"] = datetime.now(timezone.utc).isoformat()
+            self.answers[-1]["confidence"] = confidence
+        else:
+            self.answers.append({
+                "question_id": question_id,
+                "question_asked_hi": question_hi,
+                "patient_answer_hi": patient_answer_hi,
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "confidence": confidence
+            })
         if question_id not in self.asked_question_ids:
             self.asked_question_ids.append(question_id)
         self.updated_at = datetime.now(timezone.utc).isoformat()
@@ -87,6 +100,7 @@ class SehatSessionState:
             "answers": self.answers,
             "risk_signals": self.risk_signals,
             "symptoms_reported": self.symptoms_reported,
+            "symptoms_denied": self.symptoms_denied,
             "diabetes_type": self.diabetes_type,
             "diabetes_history": self.diabetes_history,
             "medications": self.medications,
@@ -95,6 +109,10 @@ class SehatSessionState:
             "family_history": self.family_history,
             "pregnancy_history": self.pregnancy_history,
             "gestational_history": self.gestational_history,
+            "sugar_category": self.sugar_category,
+            "medication_category": self.medication_category,
+            "context_memory": self.context_memory,
+            "volunteered_slots": self.volunteered_slots,
             "emergency_escalation": self.emergency_escalation,
             "emergency_details": self.emergency_details,
             "recommended_urgency": self.recommended_urgency,

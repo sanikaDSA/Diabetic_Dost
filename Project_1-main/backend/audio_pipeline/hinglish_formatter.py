@@ -173,36 +173,37 @@ ENGLISH_CLINICAL_TERMS: Dict[str, str] = {
     # Demographics (Female placed before Male)
     r"\b(फीमेल|फिमेल|महिला|स्त्री|female)\b": "Female",
     r"(?<!फी)(?<!फि)\b(मेल|पुरुष|पुरूष|male)\b": "Male",
-    r"\b(नेम|नाम|name)\b": "Name",
+    r"\b(नेम|नाम|नाव|name)\b": "Name",
     r"\b(एज|age)\b": "Age",
     r"\b(जेंडर|gender)\b": "Gender",
-    r"\b(years?|yrs?|yr)\b": "Years",
-    r"\b(months?|mo)\b": "Months",
+    r"\b(years?|yrs?|yr|इयर्स|ईयर्स)\b": "Years",
+    r"\b(months?|mo|मंथ्स)\b": "Months",
     r"\bold\b": "Old",
     
     # Clinical & Medical Core
     r"\b(डॉक्टर|डाक्टर|doctor|dr)\b": "Doctor",
-    r"\b(डायबिटीज|डायबिटिज|डायबीटीज|diabetes)\b": "Diabetes",
+    r"\b(डायबिटीज|डायबिटिज|डायबीटीज|डाएबेटिस|डायाबीटीस|मधुमेह|diabetes)\b": "Diabetes",
     r"\b(शुगर|sugar)\b": "Sugar",
-    r"\b(blood\s*sugar)\b": "Blood Sugar",
-    r"\b(fasting\s*blood\s*sugar)\b": "Fasting Blood Sugar",
+    r"\b(fasting\s*blood\s*sugar|फास्टिंग\s*ब्लड\s*शुगर)\b": "Fasting Blood Sugar",
+    r"\b(blood\s*sugar|ब्लड\s*शुगर|ब्लडशुगर)\b": "Blood Sugar",
     r"\b(फास्टिंग|fasting)\b": "Fasting",
+    r"\b(पोस्ट\s*मील|पोस्ट\s*प्रांडियल|पोस्ट\s*प्रैंडियल|पीपी\s*शुगर|पीपीबीएस|post\s*meal|ppbs|pp\s*sugar)\b": "PPBS",
     r"\b(एचबी\s*ए\s*वन\s*सी|एचबीए1सी|hba1c|hb\s*a1c)\b": "HbA1c",
-    r"\b(टाइप\s*1|टाइप1|type\s*1|type1)\b": "Type 1",
-    r"\b(टाइप\s*2|टाइप2|type\s*2|type2)\b": "Type 2",
     r"\b(टाइप\s*1\s*डायबिटीज|type\s*1\s*diabetes)\b": "Type 1 Diabetes",
     r"\b(टाइप\s*2\s*डायबिटीज|type\s*2\s*diabetes)\b": "Type 2 Diabetes",
+    r"\b(टाइप\s*1|टाइप1|type\s*1|type1)\b": "Type 1",
+    r"\b(टाइप\s*2|टाइप2|type\s*2|type2)\b": "Type 2",
     r"\b(गेस्टेशनल\s*डायबिटीज|gestational\s*diabetes)\b": "Gestational Diabetes",
-    r"\b(blood\s*pressure)\b": "Blood Pressure",
+    r"\b(blood\s*pressure|ब्लड\s*प्रेशर)\b": "Blood Pressure",
     r"\b(बीपी|bp)\b": "BP",
     
     # Medications & Tests
-    r"\b(मेडिसिन|मेडिसिन्स|दवाइयां|दवाइयाँ|medicines?|meds?)\b": "Medicines",
-    r"\b(टैबलेट|टैबलेट्स|गोली|tablets?|tab)\b": "Tablet",
+    r"\b(मेडिसिन|मेडिसिन्स|दवाइयां|दवाइयाँ|औषधे|medicines?|meds?)\b": "Medicines",
+    r"\b(टैबलेट|टैबलेट्स|गोली|गोळ्या|tablets?|tab)\b": "Tablet",
     r"\b(इंसुलिन|इन्सुलिन|insulin)\b": "Insulin",
     r"\b(इंजेक्सन|इंजेक्शन|injections?)\b": "Injection",
     r"\b(डोज|डोज़|dose|doses)\b": "Dose",
-    r"\b(मेटफॉर्मिन|metformin)\b": "Metformin",
+    r"\b(मेटफॉर्मिन|metformin|ग्लायकोमेट|glycomet)\b": "Metformin",
     r"\b(ग्लिमेपिराइड|glimepiride)\b": "Glimepiride",
     r"\b(ग्लिक्लैजाइड|gliclazide)\b": "Gliclazide",
     r"\b(टेनेलिग्लिप्टिन|teneligliptin)\b": "Teneligliptin",
@@ -215,6 +216,7 @@ ENGLISH_CLINICAL_TERMS: Dict[str, str] = {
     r"\b(क्लिनिक|clinic)\b": "Clinic",
     r"\b(अपॉइंटमेंट|appointment)\b": "Appointment",
     r"\b(चेकअप|चेक\s*अप|checkup)\b": "Checkup",
+    r"\b(कंसल्टेशन|consultation)\b": "Consultation",
     
     # Symptoms & Organs
     r"\b(यूरिन|urine)\b": "Urine",
@@ -260,7 +262,7 @@ ENGLISH_CLINICAL_TERMS: Dict[str, str] = {
     # Emergency & Hospital
     r"\b(emergency\s*department)\b": "Emergency Department",
     r"\b(इमरजेंसी|emergency)\b": "Emergency",
-    r"\b(chest\s*pain)\b": "Chest Pain",
+    r"\b(chest\s*pain|चेस्ट\s*पेन)\b": "Chest Pain",
     r"\b(ब्रीदिंग|breathing)\b": "Breathing",
     r"\b(हॉस्पिटल|hospital)\b": "Hospital",
     r"\b(audio\s*recording)\b": "Audio Recording",
@@ -541,6 +543,24 @@ HINGLISH_TO_DEVANAGARI: Dict[str, str] = {
 }
 
 
+def normalize_misrecognized_stt_phrases(text: str) -> str:
+    """
+    Cleans up common speech recognition (STT) phonetic acoustic errors in Indian languages:
+    e.g., 'एक स्टाफ' / 'स्टाफ' misrecognized for 'फक्त' or 'त्रास', 'fat' misrecognized for 'fatigue/थकवा'.
+    """
+    if not text:
+        return ""
+    t = text
+    # Fix 'एक स्टाफ' / 'स्टाफ' misheard for 'फक्त' / 'त्रास'
+    t = re.sub(r"\bनहीं\s*मुझे\s*एक\s*स्टाफ\s*है\s*तो\s*अभी\s*महसूस\s*नहीं\s*हो\s*रहा\b", "नहीं मुझे कोई तकलीफ अभी महसूस नहीं हो रही", t, flags=re.IGNORECASE)
+    t = re.sub(r"\bएक\s*स्टाफ\b", "फक्त", t, flags=re.IGNORECASE)
+    t = re.sub(r"\bस्टाफ\s*(?:है|आहे)\b", "त्रास आहे", t, flags=re.IGNORECASE)
+    t = re.sub(r"\b(ट्रान्स|ट्रास)\b", "त्रास", t, flags=re.IGNORECASE)
+    t = re.sub(r"\b(फकट)\b", "फक्त", t, flags=re.IGNORECASE)
+    t = re.sub(r"\b(डायबिटिस|डायबेटिस|डायबीटीज)\b", "Diabetes", t, flags=re.IGNORECASE)
+    return t
+
+
 def format_patient_speech_hinglish(text: str) -> str:
     """
     Transforms patient voice or text transcripts into standard Code-Mixed Hindi + English:
@@ -551,7 +571,8 @@ def format_patient_speech_hinglish(text: str) -> str:
     if not text or not text.strip():
         return ""
 
-    formatted = text.strip()
+    # Step 0: Normalize common phonetic STT errors
+    formatted = normalize_misrecognized_stt_phrases(text.strip())
 
     # Step 1: Convert Devanagari Phonetic English (e.g. "माय नेम इज" -> "My Name is", "आई अग्री" -> "I agree")
     for pattern, eng_repl in DEVANAGARI_PHONETIC_ENGLISH.items():

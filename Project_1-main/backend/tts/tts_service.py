@@ -96,22 +96,21 @@ class SarvamMaleHindiTTS(TTSService):
                 "api-subscription-key": self.api_key,
                 "Content-Type": "application/json"
             }
+            speaker = os.getenv("TTS_VOICE_ID", "aditya")
             payload = {
                 "inputs": [clean_hi],
                 "target_language_code": "hi-IN",
-                "speaker": os.getenv("TTS_VOICE_ID", "hemant"),
-                "pitch": 2.0,      # Energetic: bright & confident male pitch
-                "pace": 1.15,      # Energetic: lively, natural speed
-                "loudness": 1.8,   # Energetic: strong voice projection
+                "speaker": speaker,
+                "pace": 0.95,
+                "loudness": 1.0,
                 "speech_sample_rate": 16000,
-                "enable_preprocessing": True,
-                "model": "bulbul:v2"
+                "enable_preprocessing": True
             }
 
             try:
                 data_bytes = json.dumps(payload).encode("utf-8")
                 req = urllib.request.Request(self.endpoint, data=data_bytes, headers=headers, method="POST")
-                with urllib.request.urlopen(req, timeout=3.5) as resp:
+                with urllib.request.urlopen(req, timeout=8.0) as resp:
                     if resp.status == 200:
                         res_json = json.loads(resp.read().decode("utf-8"))
                         audios = res_json.get("audios", [])
@@ -119,6 +118,7 @@ class SarvamMaleHindiTTS(TTSService):
                             import base64
                             audio_data = base64.b64decode(audios[0])
                             if output_path:
+                                os.makedirs(os.path.dirname(os.path.abspath(output_path)), exist_ok=True)
                                 with open(output_path, "wb") as f:
                                     f.write(audio_data)
                             return {
@@ -128,43 +128,15 @@ class SarvamMaleHindiTTS(TTSService):
                                 "audio_url": output_path
                             }
             except Exception as e:
-                logger.warning(f"Sarvam TTS request failed or timed out: {e}")
+                logger.warning(f"Sarvam TTS request notice: {e}")
 
-        # Local fallback using pyttsx3 or SAPI5 if available on Windows
-        return self._local_speech_synthesize(text_hi, output_path)
-
-    def _local_speech_synthesize(self, text_hi: str, output_path: Optional[str] = None) -> Dict[str, Any]:
-        try:
-            import pyttsx3
-            engine = pyttsx3.init()
-            engine.setProperty('rate', 165)   # Energetic: lively speech rate
-            engine.setProperty('volume', 1.0)  # Energetic: full volume
-            
-            # Select male voice
-            voices = engine.getProperty('voices')
-            for v in voices:
-                if 'male' in v.name.lower() or 'hindi' in v.name.lower() or 'david' in v.name.lower():
-                    engine.setProperty('voice', v.id)
-                    break
-
-            temp_path = output_path or "outputs/reports/temp_sehat_tts.wav"
-            os.makedirs(os.path.dirname(temp_path), exist_ok=True)
-            engine.save_to_file(text_hi, temp_path)
-            engine.runAndWait()
-
-            if os.path.exists(temp_path) and os.path.getsize(temp_path) > 100:
-                with open(temp_path, "rb") as f:
-                    data = f.read()
-                return {"audio_bytes": data, "status": "success_pyttsx3", "provider": "pyttsx3_male", "audio_url": temp_path}
-        except Exception as e:
-            logger.debug(f"pyttsx3 fallback not available: {e}")
-
-        # Clean silent WAV file fallback so client Web Speech API cleanly takes over without buzzing/beeping
-        silent_data = self._generate_clean_silent_wav(duration_sec=0.2)
-        if output_path:
-            with open(output_path, "wb") as f:
-                f.write(silent_data)
-        return {"audio_bytes": silent_data, "status": "fallback_client_speech", "provider": "web_speech_client", "audio_url": output_path}
+        # Instantaneous fallback to high-quality browser Web Speech API (zero latency)
+        return {
+            "audio_bytes": b"",
+            "status": "fallback_client_speech",
+            "provider": "web_speech_client",
+            "audio_url": None
+        }
 
     def _generate_clean_silent_wav(self, duration_sec: float = 0.2, sample_rate: int = 16000) -> bytes:
         num_samples = int(duration_sec * sample_rate)

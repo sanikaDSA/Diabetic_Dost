@@ -334,14 +334,24 @@ class ClinicalConversationSession:
 
         # 1. Extract Name
         name_patterns = [
-            r"(?:मेरा\s*नाम|नाम\s*है|नाव\s*आहे|नाव|नाम|my\s*name\s*is|i\s*am)\s*[:=]?\s*([A-Za-z\u0900-\u097F]+)",
+            r"(?:मेरा\s*नाम|माझे\s*नाव|माझं\s*नाव|नाव\s*आहे|नाव|नाम\s*है|नाम|my\s*name\s*is|i\s*am)\s*[:=]?\s*([A-Za-z\u0900-\u097F]+)",
             r"^([A-Za-z\u0900-\u097F]+)\s*(?:हूँ|आहे|here)$"
         ]
+        blocked_name_terms = {
+            "जी", "ji", "jee", "मुझे", "मेरी", "मेरा", "माझे", "माझं", "माझ", "हाँ", "नहीं", "नाही", "हो", "होय", "चालेल", "बरं", "बुखार", "खांसी", "दो", "तीन",
+            "doctor", "डॉक्टर", "साल", "उम्र", "पुरुष", "महिला", "male", "female", "वय", "लिंग", "ling", "gender", "सेक्स",
+            "शॉपिंग", "shopping", "शाँपिंग", "शापिंग", "खरेदी", "मार्केट", "market", "बाजार", "मॉल", "mall", "दुकान", "ऑफिस",
+            "कामावर", "काम", "घर", "घरी", "डायबिटीज", "diabetes", "शुगर", "sugar", "इन्सुलिन", "insulin", "मेटफॉर्मिन",
+            "बीपी", "bp", "गोळी", "औषध", "रिपोर्ट", "टेस्ट", "तहान", "लघवी", "थकवा", "चक्कर", "गेलो", "आलो", "जातो", "येतो",
+            "ओके", "ok", "yes", "no", "hello", "hi", "नमस्ते", "नमस्कार", "धन्यवाद"
+        }
         for pat in name_patterns:
             m = re.search(pat, user_text, re.IGNORECASE)
             if m:
                 cand = m.group(1).strip()
-                if cand.lower() not in ["मुझे", "मेरी", "मेरा", "हाँ", "नहीं", "नाही", "बुखार", "खांसी", "दो", "तीन", "doctor", "डॉक्टर", "साल", "उम्र", "पुरुष", "महिला", "male", "female", "वय", "लिंग", "ling", "gender", "सेक्स"]:
+                cand_lower = cand.lower()
+                cand_base = re.sub(r"(ला|ना|वर|कडे|त|हून|मध्ये|साठी|चा|ची|चे|च्या)$", "", cand_lower)
+                if cand_lower not in blocked_name_terms and cand_base not in blocked_name_terms and len(cand) > 1:
                     name = cand
                     break
 
